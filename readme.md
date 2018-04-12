@@ -2,7 +2,19 @@
 
 materialized view key/id store based on unordered log messages
 
-useful for kappa architectures with missing or out of order log entries
+This library presents a familiar key/value materialized view for append-only log
+data which can be inserted in any order. New documents point at ancestor
+documents under the same key to "overwrite" their values. This library
+implements a multi-register conflict strategy, so each key may map to more than
+one value. To merge multiple values into a single value, point at more than one
+ancestor id.
+
+This library is useful for kappa architectures with missing or out of order log
+entries, or where calculating a topological ordering would be expensive.
+
+This library does not store values itself, only the IDs to look up values. This
+way you can use an append-only log to store your primary values without
+duplicating data.
 
 # example
 
@@ -67,3 +79,36 @@ $ rm -rf /tmp/kv.db \
 [ 'z', 'y' ]
 ```
 
+# api
+
+``` js
+var umkv = require('unordered-materialized-kv')
+```
+
+## var kv = umkv(db, opts)
+
+Create a `kv` instance from a [leveldb][] instance `db` (levelup or leveldown).
+
+Only the `db.batch()` and `db.get()` interfaces of leveldb are used with no
+custom value encoding, so you can use any interface that supports these methods.
+
+Optionally pass in a custom `opts.delim`. The default is `','`. This delimiter
+is used to separate document ids.
+
+## kv.batch(rows, cb)
+
+Write an array of `rows` into the `kv`. Each `row` in the `rows` array has:
+
+* `row.key` - string key to use
+* `row.id` - unique id string of this record
+* `row.links` - array of id string ancestor links
+
+## kv.get(key, cb)
+
+Lookup the array of ids that map to a given string `key` as `cb(err, ids)`.
+
+[leveldb]: https://github.com/Level/level
+
+# license
+
+BSD

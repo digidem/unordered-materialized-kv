@@ -3,15 +3,22 @@ var LINK = 'l!'
 
 module.exports = MKV
 
-function MKV (db) {
-  if (!(this instanceof MKV)) return new MKV(db)
+function MKV (db, opts) {
+  if (!(this instanceof MKV)) return new MKV(db, opts)
   this._db = db
+  this._delim = opts && opts.delim ? opts.delim : ','
 }
 
 MKV.prototype.batch = function (docs, cb) {
   var self = this
   var batch = []
   var pending = 1
+
+  for (var i = 0; i < docs.length; i++) {
+    if (docs[i].id.indexOf(self._delim) >= 0) {
+      return process.nextTick(cb, new Error('id contains delimiter'))
+    }
+  }
 
   var linkExists = {} // pointed-to documents can't be heads
   docs.forEach(function (doc) {
@@ -45,7 +52,7 @@ MKV.prototype.batch = function (docs, cb) {
     Object.keys(keygroup).forEach(function (key) {
       var group = keygroup[key]
       var klinks = values[key]
-        ? values[key].toString().split(',')
+        ? values[key].toString().split(self._delim)
         : []
       group.forEach(function (doc) {
         var dlinks = {}
@@ -65,7 +72,7 @@ MKV.prototype.batch = function (docs, cb) {
       batch.push({
         type: 'put',
         key: KEY + key,
-        value: klinks.join(',')
+        value: klinks.join(self._delim)
       })
     })
     self._db.batch(batch,cb)
@@ -73,8 +80,9 @@ MKV.prototype.batch = function (docs, cb) {
 }
 
 MKV.prototype.get = function (key, cb) {
-  this._db.get(KEY + key, function (err, values) {
+  var self = this
+  self._db.get(KEY + key, function (err, values) {
     if (err) cb(err)
-    else cb(null, values.toString().split(','))
+    else cb(null, values.toString().split(self._delim))
   })
 }
