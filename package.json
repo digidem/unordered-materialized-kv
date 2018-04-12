@@ -1,0 +1,8 @@
+{
+  "name": "unordered-materialized-kv",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "tape": "^4.9.0"
+  }
+}
