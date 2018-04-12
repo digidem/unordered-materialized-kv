@@ -12,41 +12,62 @@ MKV.prototype.batch = function (docs, cb) {
   var self = this
   var batch = []
   var pending = 1
+
+  var linkExists = {} // pointed-to documents can't be heads
   docs.forEach(function (doc) {
     pending++
-    var dlinks = {}
     ;(doc.links || []).forEach(function (link) {
-      dlinks[link] = true
-      batch.push({
-        type: 'put',
-        key: LINK + link,
-        value: ''
-      })
+      linkExists[link] = true
     })
     self._db.get(LINK + doc.id, function (err, value) {
-      if (value !== undefined) {
-        // link to this doc already exists, it can't be a head
-        if (--pending === 0) writeBatch()
-      } else self._db.get(KEY + doc.key, ongetkey)
+      linkExists[doc.id] = linkExists[doc.id] || (value !== undefined)
+      if (--pending === 0) writeBatch()
     })
-    function ongetkey (err, value) {
-      var klinks = value
-        ? value.toString().split(',')
+  })
+
+  var keygroup = {}
+  docs.forEach(function (doc) {
+    if (keygroup[doc.key]) keygroup[doc.key].push(doc)
+    else keygroup[doc.key] = [doc]
+  })
+  var values = {}
+  Object.keys(keygroup).forEach(function (key) {
+    pending++
+    var group = keygroup[key]
+    self._db.get(KEY + key, function (err, value) {
+      values[key] = value
+      if (--pending === 0) writeBatch()
+    })
+  })
+  if (--pending === 0) writeBatch()
+
+  function writeBatch () {
+    Object.keys(keygroup).forEach(function (key) {
+      var group = keygroup[key]
+      var klinks = values[key]
+        ? values[key].toString().split(',')
         : []
-      klinks.push(doc.id)
-      var nlinks = klinks.filter(function (link) {
-        return !Object.prototype.hasOwnProperty.call(dlinks,link)
+      group.forEach(function (doc) {
+        var dlinks = {}
+        ;(doc.links || []).forEach(function (link) {
+          dlinks[link] = true
+          batch.push({
+            type: 'put',
+            key: LINK + link,
+            value: ''
+          })
+        })
+        if (!linkExists[doc.id]) klinks.push(doc.id)
+        klinks = klinks.filter(function (link) {
+          return !Object.prototype.hasOwnProperty.call(dlinks,link)
+        })
       })
       batch.push({
         type: 'put',
-        key: KEY + doc.key,
-        value: nlinks.join(',')
+        key: KEY + key,
+        value: klinks.join(',')
       })
-      if (--pending === 0) writeBatch()
-    }
-  })
-  if (--pending === 0) writeBatch()
-  function writeBatch () {
+    })
     self._db.batch(batch,cb)
   }
 }
