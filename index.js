@@ -21,7 +21,9 @@ MKV.prototype.batch = function (docs, cb) {
   var pending = 1
 
   for (var i = 0; i < docs.length; i++) {
-    if (docs[i].id.indexOf(self._delim) >= 0) {
+    var id = docs[i].id
+    if (typeof id !== 'string') id = String(id)
+    if (id.indexOf(self._delim) >= 0) {
       return process.nextTick(cb, new Error('id contains delimiter'))
     }
   }
