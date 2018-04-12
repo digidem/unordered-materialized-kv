@@ -7,10 +7,16 @@ function MKV (db, opts) {
   if (!(this instanceof MKV)) return new MKV(db, opts)
   this._db = db
   this._delim = opts && opts.delim ? opts.delim : ','
+  this._writing = false
+  this._writeQueue = []
 }
 
 MKV.prototype.batch = function (docs, cb) {
+  if (!cb) cb = noop
   var self = this
+  if (self._writing) return self._writeQueue.push(docs, cb)
+  self._writing = true
+
   var batch = []
   var pending = 1
 
@@ -75,14 +81,26 @@ MKV.prototype.batch = function (docs, cb) {
         value: klinks.join(self._delim)
       })
     })
-    self._db.batch(batch,cb)
+    self._db.batch(batch, function (err) {
+      if (err) cb(err)
+      else cb()
+      self._writing = false
+      if (self._writeQueue.length > 0) {
+        var wdocs = self._writeQueue.shift()
+        var wcb = self._writeQueue.shift()
+        self.batch(wdocs, wcb)
+      }
+    })
   }
 }
 
 MKV.prototype.get = function (key, cb) {
+  if (!cb) cb = noop
   var self = this
   self._db.get(KEY + key, function (err, values) {
     if (err) cb(err)
     else cb(null, values.toString().split(self._delim))
   })
 }
+
+function noop () {}
