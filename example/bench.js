@@ -23,6 +23,7 @@ var uid = 0
       key: keys[Math.floor(Math.random()*keys.length)],
       links: uid > 0 ? [uid-1] : []
     })
+    uid++
   }
   kv.batch(docs, function (err) {
     if (err) return console.error(err)

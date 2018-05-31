@@ -109,6 +109,13 @@ Lookup the array of ids that map to a given string `key` as `cb(err, ids)`.
 
 [leveldb]: https://github.com/Level/level
 
+## kv.isLinked(key, cb)
+
+Test if a `key` is linked to as `cb(err, exists)` for a boolean `exists`.
+
+This routine is used internally but you can use this method to save having to
+duplicate this logic in your own unordered materialized view.
+
 # license
 
 BSD

@@ -1,3 +1,5 @@
+var once = require('once')
+
 var KEY = 'k!'
 var LINK = 'l!'
 
@@ -12,7 +14,7 @@ function MKV (db, opts) {
 }
 
 MKV.prototype.batch = function (docs, cb) {
-  if (!cb) cb = noop
+  cb = once(cb || noop)
   var self = this
   if (self._writing) return self._writeQueue.push(docs, cb)
   self._writing = true
@@ -34,8 +36,9 @@ MKV.prototype.batch = function (docs, cb) {
     ;(doc.links || []).forEach(function (link) {
       linkExists[link] = true
     })
-    self._db.get(LINK + doc.id, function (err, value) {
-      linkExists[doc.id] = linkExists[doc.id] || (value !== undefined)
+    self.isLinked(doc.id, function (err, ex) {
+      if (err) return cb(err)
+      linkExists[doc.id] = linkExists[doc.id] || ex
       if (--pending === 0) writeBatch()
     })
   })
@@ -102,6 +105,12 @@ MKV.prototype.get = function (key, cb) {
   self._db.get(KEY + key, function (err, values) {
     if (err) cb(err)
     else cb(null, values.toString().split(self._delim))
+  })
+}
+
+MKV.prototype.isLinked = function (id, cb) {
+  this._db.get(LINK + id, function (err, value) {
+    cb(null, value !== undefined)
   })
 }
 
