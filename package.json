@@ -1,6 +1,6 @@
 {
   "name": "unordered-materialized-kv",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "materialized view key/id store based on unordered log messages",
   "dependencies": {
     "once": "^1.4.0"
