@@ -67,6 +67,8 @@ MKV.prototype.batch = function (docs, cb) {
       var klinks = values[key]
         ? values[key].toString().split(self._delim)
         : []
+      var khas = {}
+      for (var i = 0; i < klinks.length; i++) khas[klinks[i]] = true
       group.forEach(function (doc) {
         var dlinks = {}
         ;(doc.links || []).forEach(function (link) {
@@ -81,7 +83,9 @@ MKV.prototype.batch = function (docs, cb) {
             value: ''
           })
         })
-        if (!linkExists[doc.id]) klinks.push(doc.id)
+        if (!linkExists[doc.id] && !khas[doc.id]) {
+          klinks.push(doc.id)
+        }
         klinks = klinks.filter(function (link) {
           return !Object.prototype.hasOwnProperty.call(dlinks,link)
         })
