@@ -11,6 +11,7 @@ function MKV (db, opts) {
   this._delim = opts && opts.delim ? opts.delim : ','
   this._writing = false
   this._writeQueue = []
+  this._onremove = opts ? opts.onremove : null
 }
 
 MKV.prototype.batch = function (docs, cb) {
@@ -60,6 +61,7 @@ MKV.prototype.batch = function (docs, cb) {
   if (--pending === 0) writeBatch()
 
   function writeBatch () {
+    var removed = [], removedObj = {}
     Object.keys(keygroup).forEach(function (key) {
       var group = keygroup[key]
       var klinks = values[key]
@@ -68,6 +70,10 @@ MKV.prototype.batch = function (docs, cb) {
       group.forEach(function (doc) {
         var dlinks = {}
         ;(doc.links || []).forEach(function (link) {
+          if (!removedObj[link]) {
+            removed.push(link)
+            removedObj[link] = true
+          }
           dlinks[link] = true
           batch.push({
             type: 'put',
@@ -90,6 +96,7 @@ MKV.prototype.batch = function (docs, cb) {
       if (err) cb(err)
       else cb()
       self._writing = false
+      if (self._onremove) self._onremove(removed)
       if (self._writeQueue.length > 0) {
         var wdocs = self._writeQueue.shift()
         var wcb = self._writeQueue.shift()

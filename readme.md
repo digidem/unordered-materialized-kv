@@ -95,6 +95,9 @@ custom value encoding, so you can use any interface that supports these methods.
 Optionally pass in a custom `opts.delim`. The default is `','`. This delimiter
 is used to separate document ids.
 
+You can pass in a function as `opts.onremove` that will be called with an array
+of string keys after those keys are removed from the database due to linking.
+
 ## kv.batch(rows, cb)
 
 Write an array of `rows` into the `kv`. Each `row` in the `rows` array has:
