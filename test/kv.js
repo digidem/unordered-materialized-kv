@@ -180,3 +180,70 @@ test('onremove', function (t) {
     })
   })
 })
+
+test('onremove with keys', function (t) {
+  t.plan(4)
+  var kv = umkv(memdb(), {
+    onRemoveWithKeys: function (ids) {
+      t.deepEqual(ids, {
+        a: 'cool',
+        b: 'cool',
+        c: 'cool',
+        d: 'cool'
+      })
+    }
+  })
+  var docs = [
+    { id: 'e', key: 'cool', links: ['c','d'] },
+    { id: 'c', key: 'cool', links: ['b'] },
+    { id: 'd', key: 'cool', links: ['b'] },
+    { id: 'a', key: 'cool', links: [] },
+    { id: 'b', key: 'cool', links: ['a'] }
+  ]
+  kv.batch(docs, function (err) {
+    t.error(err)
+    kv.get('cool', function (err, ids) {
+      t.error(err)
+      t.deepEqual(ids.sort(), ['e'])
+    })
+  })
+})
+
+test('onremove with different keys', function (t) {
+  t.plan(6)
+  var kv = umkv(memdb(), {
+    onRemoveWithKeys: function (ids) {
+      t.deepEqual(ids, {
+        x: 'hey',
+        c: 'cool',
+        d: 'cool',
+        b: 'cool',
+        y: 'hey',
+        z: 'hey',
+        a: 'cool'
+      })
+    }
+  })
+  var docs = [
+    { id: 'z', key: 'hey', links: ['x'] },
+    { id: 'e', key: 'cool', links: ['c','d'] },
+    { id: 'c', key: 'cool', links: ['b'] },
+    { id: 'd', key: 'cool', links: ['b'] },
+    { id: 'q', key: 'hey', links: ['y','z'] },
+    { id: 'y', key: 'hey', links: ['x'] },
+    { id: 'a', key: 'cool', links: [] },
+    { id: 'x', key: 'hey', links: ['x'] },
+    { id: 'b', key: 'cool', links: ['a'] }
+  ]
+  kv.batch(docs, function (err) {
+    t.error(err)
+    kv.get('cool', function (err, ids) {
+      t.error(err)
+      t.deepEqual(ids.sort(), ['e'])
+    })
+    kv.get('hey', function (err, ids) {
+      t.error(err)
+      t.deepEqual(ids.sort(), ['q'])
+    })
+  })
+})

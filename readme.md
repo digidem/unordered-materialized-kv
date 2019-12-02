@@ -92,11 +92,12 @@ Create a `kv` instance from a [leveldb][] instance `db` (levelup or leveldown).
 Only the `db.batch()` and `db.get()` interfaces of leveldb are used with no
 custom value encoding, so you can use any interface that supports these methods.
 
-Optionally pass in a custom `opts.delim`. The default is `','`. This delimiter
-is used to separate document ids.
-
-You can pass in a function as `opts.onremove` that will be called with an array
-of string keys after those keys are removed from the database due to linking.
+* `opts.delim` - delimiter used to separate document ids (default: `','`)
+* `opts.onRemove` - function that will be called with an array of string keys
+  (the ids in each document) after those ids are removed from the database to do
+  linking
+* `opts.onRemoveWithKeys` - function that will be called with an object mapping
+  an id to its key after that id is removed from the database due to linking
 
 ## kv.batch(rows, cb)
 
