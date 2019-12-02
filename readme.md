@@ -98,6 +98,11 @@ is used to separate document ids.
 You can pass in a function as `opts.onremove` that will be called with an array
 of string keys after those keys are removed from the database due to linking.
 
+You can pass in a function as `opts.onupdate` that will be called after every
+batch is written with an object mapping keys to arrays of ids which represent
+the new values you would obtain from `get()` for that key. This is useful for
+implementing live queries or subscriptions.
+
 ## kv.batch(rows, cb)
 
 Write an array of `rows` into the `kv`. Each `row` in the `rows` array has:
